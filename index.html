@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doga Textile — Katalog</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-700 to-yellow-400 font-sans text-white">
+    <!-- Header -->
+    <header class="text-center py-10">
+      <h1 class="text-5xl font-bold mb-4">🧵 Doga Textile</h1>
+      <p class="text-xl">Katalog, Filtreleme, Sepet ve Sipariş Gönderimi</p>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-6">
+      <!-- Filter Panel -->
+      <div class="flex flex-wrap justify-between items-center mb-8 gap-4">
+        <select onchange="changeFilter(this.value)" class="rounded-full px-4 py-2 text-gray-700">
+          <option value="all">Tüm Kategoriler</option>
+          <option value="Fermuarlar">Fermuarlar</option>
+          <option value="İpler">İpler</option>
+          <option value="Kumaşlar">Kumaşlar</option>
+        </select>
+
+        <button onclick="showCart()" class="bg-yellow-400 text-gray-900 px-5 py-2 rounded-full font-bold shadow hover:bg-yellow-300">
+          🛍 Sepet <span id="cart-count" class="bg-white text-blue-900 px-2 rounded-full ml-2">0</span>
+        </button>
+      </div>
+
+      <!-- Catalog -->
+      <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- JS will insert items here -->
+      </div>
+
+      <!-- Order Form -->
+      <div class="max-w-2xl mx-auto bg-white text-gray-900 rounded-2xl shadow-xl p-8 mt-16 mb-20">
+        <h2 class="text-2xl font-bold mb-6 text-center">📩 Siparişi Gönder</h2>
+        <form id="order-form" class="space-y-4">
+          <input type="text" id="name" placeholder="Adınız" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+          <input type="email" id="email" placeholder="E-posta" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+          <input type="tel" id="phone" placeholder="Telefon" required class="w-full border border-gray-300 rounded-lg px-4 py-2">
+          <button type="submit" class="w-full bg-blue-900 text-white font-bold py-2 rounded-lg hover:bg-yellow-400 transition">
+            📤 Siparişi Gönder
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-10 text-sm opacity-70">
+      © 2025 Doga Textile. Tüm Hakları Saklıdır.
+    </footer>
+
+    <!-- Modal Window -->
+    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden">
+      <div class="bg-white p-8 rounded-lg text-gray-900 max-w-xs w-full">
+        <h2 class="text-2xl font-bold mb-4">Miktar Seçin</h2>
+        <input id="item-quantity" type="number" min="1" value="1" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4">
+        <p id="modal-price" class="text-xl mb-4">Fiyat: <span id="item-price">0</span>₽</p>
+        <div class="flex justify-between">
+          <button onclick="addToCartFromModal()" class="bg-blue-900 text-white py-2 px-6 rounded-full">Sepete Ekle</button>
+          <button onclick="closeModal()" class="bg-gray-300 text-gray-800 py-2 px-6 rounded-full">Kapat</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      let cart = [];
+      let filter = 'all';
+
+      const items = [
+        { name: 'Fermuar', category: 'Fermuarlar', desc: 'Yüksek kaliteli dayanıklı fermuar', price: 100, image: 'images/fermuar.png' },
+        { name: 'İpler', category: 'İpler', desc: 'Sağlam ve dayanıklı ipler', price: 50, image: 'images/ipler.jpg' },
+        { name: 'Kumaş', category: 'Kumaşlar', desc: 'Türkiye menşeli kaliteli kumaş', price: 200, image: 'images/kumaş.jpg' },
+        { name: 'Lüks Fermuar', category: 'Fermuarlar', desc: 'Premium kalitede fermuar', price: 150, image: 'images/lüks fermuar.jpg' },
+        { name: 'Pamuk Kumaşı', category: 'Kumaşlar', desc: '100% pamuk kumaş', price: 300, image: 'images/pamuk kumaşı.jpg' }
+      ];
+
+      function renderItems() {
+        const grid = document.getElementById('items-grid');
+        grid.innerHTML = '';
+
+        const filtered = filter === 'all' ? items : items.filter(item => item.category === filter);
+
+        filtered.forEach(item => {
+          const div = document.createElement('div');
+          div.className = "bg-white text-gray-900 rounded-2xl shadow-lg p-6 flex flex-col items-center";
+
+          div.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" class="rounded-xl mb-4">
+            <h2 class="text-xl font-semibold mb-2">${item.name}</h2>
+            <p class="text-sm mb-4">${item.desc}</p>
+            <button onclick="openModal('${item.name}', ${item.price})" class="bg-blue-900 hover:bg-yellow-400 text-white px-6 py-2 rounded-full transition">
+              Sepete Ekle
+            </button>
+          `;
+
+          grid.appendChild(div);
+        });
+      }
+
+      function openModal(name, price) {
+        const modal = document.getElementById('modal');
+        const quantityInput = document.getElementById('item-quantity');
+        const itemPrice = document.getElementById('item-price');
+
+        itemPrice.innerText = price;
+        modal.style.display = 'flex';
+        modal.setAttribute('data-item-name', name);
+      }
+
+      function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+      }
+
+      function addToCartFromModal() {
+        const quantity = document.getElementById('item-quantity').value;
+        const price = document.getElementById('item-price').innerText;
+        const itemName = document.getElementById('modal').getAttribute('data-item-name');
+
+        cart.push({ itemName, quantity, price });
+        document.getElementById('cart-count').innerText = cart.length;
+        closeModal();
+      }
+
+      function showCart() {
+        if (cart.length === 0) return alert("Sepetiniz Boş!");
+        const cartItems = cart.map((item, i) => `${i + 1}. ${item.itemName} (${item.quantity} adet) - ${item.price * item.quantity}₽`).join('\n');
+        const confirmOrder = confirm(`Siparişiniz:\n\n${cartItems}\n\nSiparişi Onaylayın?`);
+        if (confirmOrder) {
+          alert("✅ Siparişiniz Alındı! Sizinle iletişime geçeceğiz.");
+          cart = [];
+          document.getElementById('cart-count').innerText = 0;
+        }
+      }
+
+      function changeFilter(value) {
+        filter = value;
+        renderItems();
+      }
+
+      window.onload = renderItems;
+
+      // Sipariş Formu
+      const chat_id = '72914392';
+      const token = '7965268409:AAHi4op-q6N4inni6c2eu_CLHqG0D7HASs4';
+
+      function sendMessageToTelegram(message) {
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        const data = {
+          chat_id: chat_id,
+          text: message
+        };
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert('✅ Sipariş Başarıyla Gönderildi!');
+          document.getElementById('order-form').reset();
+        })
+        .catch(error => {
+          console.error("Hata:", error);
+          alert('❌ Gönderim Hatası.');
+        });
+      }
+
+      document.getElementById('order-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+
+        const itemsInCart = cart.length > 0 ? cart.map((item, i) => `${i + 1}. ${item.itemName} (${item.quantity} adet) - ${item.price * item.quantity}₽`).join('\n') : 'Sepet Boş';
+
+        const message = `🧵 Yeni Sipariş:\n👤 Adı: ${name}\n📧 E-posta: ${email}\n📞 Telefon: ${phone}\n\n🛒 Sepet:\n${itemsInCart}`;
+        sendMessageToTelegram(message);
+
+        // Clear cart and reset order form
+        cart = [];
+        document.getElementById('cart-count').innerText = 0;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Каталог товаров</title>
+    <link href="./dist/output.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gradient-to-r from-blue-900 to-indigo-800 text-white font-sans">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <h1 class="text-4xl font-bold text-center mb-8">Каталог товаров</h1>
+
+      <!-- Фильтры -->
+      <div class="flex justify-center gap-4 mb-6 flex-wrap">
+        <button class="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-2xl">Все</button>
+        <button class="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-2xl">Электроника</button>
+        <button class="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-2xl">Одежда</button>
+        <button class="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-2xl">Аксессуары</button>
+      </div>
+
+      <!-- Товары -->
+      <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <!-- Товары будут подставлены через JS -->
+      </div>
+
+      <!-- Корзина -->
+      <div class="bg-white text-black p-6 rounded-2xl shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">🛒 Ваша корзина</h2>
+        <ul id="cartItems" class="space-y-2"></ul>
+        <div class="mt-4 font-semibold text-lg">Итого: <span id="total">0</span> сум</div>
+        <button onclick="sendOrder()" class="mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-xl font-bold">
+          Отправить заказ в Telegram
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const productsData = [
+        { id: 1, name: "Ноутбук Asus", price: 12000000, image: "https://via.placeholder.com/300x200" },
+        { id: 2, name: "Смартфон Xiaomi", price: 4500000, image: "https://via.placeholder.com/300x200" },
+        { id: 3, name: "Наушники JBL", price: 800000, image: "https://via.placeholder.com/300x200" }
+      ];
+
+      const cart = [];
+      const cartItems = document.getElementById("cartItems");
+      const totalSpan = document.getElementById("total");
+
+      function renderProducts() {
+        const container = document.getElementById("products");
+        container.innerHTML = "";
+        productsData.forEach((product) => {
+          container.innerHTML += `
+            <div class="bg-white text-black p-4 rounded-2xl shadow-lg">
+              <img src="${product.image}" class="w-full h-40 object-cover rounded-lg mb-4" />
+              <h2 class="text-xl font-bold mb-2">${product.name}</h2>
+              <p class="text-blue-800 font-semibold mb-2">${product.price.toLocaleString()} сум</p>
+              <button onclick="addToCart(${product.id})" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl font-bold w-full">
+                В корзину
+              </button>
+            </div>
+          `;
+        });
+      }
+
+      function addToCart(id) {
+        const product = productsData.find(p => p.id === id);
+        cart.push(product);
+        updateCart();
+      }
+
+      function updateCart() {
+        cartItems.innerHTML = "";
+        let total = 0;
+        cart.forEach((item, index) => {
+          total += item.price;
+          cartItems.innerHTML += `
+            <li class="flex justify-between items-center border-b pb-2">
+              <span>${item.name}</span>
+              <div>
+                <span class="text-blue-700 font-semibold">${item.price.toLocaleString()} сум</span>
+                <button onclick="removeItem(${index})" class="ml-4 text-red-500 font-bold">✖</button>
+              </div>
+            </li>
+          `;
+        });
+        totalSpan.innerText = total.toLocaleString();
+      }
+
+      function removeItem(index) {
+        cart.splice(index, 1);
+        updateCart();
+      }
+
+      function sendOrder() {
+        const text = cart.map(item => `🔹 ${item.name} - ${item.price.toLocaleString()} сум`).join("%0A");
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        const finalText = `🛍 Заказ:%0A${text}%0A%0A💰 Итого: ${total.toLocaleString()} сум`;
+        const token = "ТОКЕН_БОТА"; // Вставь свой токен
+        const chatId = "CHAT_ID";    // Вставь свой chat_id
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${finalText}`;
+        window.open(url, "_blank");
+      }
+
+      renderProducts();
+    </script>
+  </body>
+</html>
